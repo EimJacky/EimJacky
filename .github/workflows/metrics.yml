@@ -1,0 +1,25 @@
+name: GitHub Metrics
+
+on:
+  schedule:
+    # Runs every day at midnight in Asia/Shanghai (16:00 UTC).
+    - cron: "0 16 * * *"
+  workflow_dispatch:
+
+jobs:
+  github-metrics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Generate profile metrics
+        uses: lowlighter/metrics@latest
+        with:
+          token: ${{ secrets.METRICS_TOKEN }}
+          filename: github-metrics.svg
+          template: classic
+          config_display: regular
+          config_timezone: Asia/Shanghai
+          base: header, activity, community, repositories, metadata
+          committer_message: "chore: update profile metrics [skip ci]"
