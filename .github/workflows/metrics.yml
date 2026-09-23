@@ -6,6 +6,10 @@ on:
     - cron: "0 16 * * *"
   workflow_dispatch:
 
+concurrency:
+  group: profile-assets
+  cancel-in-progress: false
+
 jobs:
   github-metrics:
     runs-on: ubuntu-latest
@@ -23,3 +27,33 @@ jobs:
           config_timezone: Asia/Shanghai
           base: header, activity, community, repositories, metadata
           committer_message: "chore: update profile metrics [skip ci]"
+
+  contribution-animation:
+    needs: github-metrics
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the latest profile
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Generate animated contribution trails
+        uses: Platane/snk/svg-only@v3
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          outputs: |
+            commit-trail.svg?color_snake=#06b6d4&color_dots=#ebedf0,#ccfbf1,#99f6e4,#2dd4bf,#0f766e
+            commit-trail-dark.svg?palette=github-dark&color_snake=#22d3ee&color_dots=#161b22,#0f2f2d,#115e59,#14b8a6,#5eead4
+
+      - name: Commit animated contribution trails
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add commit-trail.svg commit-trail-dark.svg
+          git diff --cached --quiet || git commit -m "chore: update contribution animation [skip ci]"
+          git push
